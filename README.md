@@ -101,6 +101,12 @@ See comments in `config.lua` for details and examples.
   - `Tab`/`Shift+Tab`: Move between input fields
   - `H`/`L` or `Left`/`Right`: Switch response view
 
+## Images
+<img width="906" height="960" alt="250724_15h07m37s_screenshot" src="https://github.com/user-attachments/assets/4b5a0a86-b5e7-4e12-8fe3-395ba38b4813" />
+<img width="1227" height="987" alt="250724_15h09m34s_screenshot" src="https://github.com/user-attachments/assets/6ba38c17-1532-4fc2-a755-7f58f134336c" />
+
+
+
 ## Logging
 
 Logs are written to `debug.log` in the project root.
