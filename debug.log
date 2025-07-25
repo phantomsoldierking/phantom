@@ -22,3 +22,103 @@ debug 2025/07/24 14:57:47 could not load config.lua: config.lua:106: attempt to 
 stack traceback:
 	config.lua:106: in main chunk
 	[G]: ?. Using defaults.
+debug 2025/07/24 21:10:27 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/24 21:12:02 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/25 15:18:34 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/25 15:31:41 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/25 15:31:55 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/25 15:36:46 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/25 15:40:17 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/25 15:40:43 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/25 15:51:26 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/25 15:51:46 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/25 15:52:45 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/25 15:53:01 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/25 15:53:35 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/25 15:55:08 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/25 15:55:42 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/25 15:56:31 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/25 15:57:15 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/25 15:59:18 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/25 15:59:30 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/25 16:02:34 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/25 16:03:48 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/25 16:08:09 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/25 16:09:26 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/25 16:09:40 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.
+debug 2025/07/25 16:09:50 could not load config.lua: config.lua:106: attempt to index a non-table object(nil) with key 'register_panel'
+stack traceback:
+	config.lua:106: in main chunk
+	[G]: ?. Using defaults.

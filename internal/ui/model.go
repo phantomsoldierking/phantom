@@ -93,7 +93,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.HTTPModel.SetSize(m.Width, modelHeight)
 		m.GitModel.Width, m.GitModel.Height = m.Width, modelHeight
 		m.DockerModel.Width, m.DockerModel.Height = m.Width, modelHeight
-		m.KindModel.SetSize(m.Width, modelHeight)
+		m.KindModel.Width, m.KindModel.Height = m.Width, modelHeight
 		m.NvimModel.Width, m.NvimModel.Height = m.Width, modelHeight
 
 	// Custom messages
@@ -104,7 +104,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case m.DockerModel.BinaryName:
 			m.DockerModel.IsInstalled = msg.Found
 		case "kind":
-			m.KindModel.IsInstalled = msg.Found
+			m.KindModel.SetInstalled(msg.Found)
 		case m.NvimModel.BinaryName:
 			m.NvimModel.IsInstalled = msg.Found
 		}
@@ -124,7 +124,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case "Docker":
 		m.DockerModel, cmd = m.DockerModel.Update(msg)
 	case "Kind":
-		m.KindModel, cmd = m.KindModel.Update(msg)
+		var updated tea.Model
+		updated, cmd = m.KindModel.Update(msg)
+		if km, ok := updated.(kind.Model); ok {
+			m.KindModel = km
+		}
 	case "Nvim":
 		m.NvimModel, cmd = m.NvimModel.Update(msg)
 	}
