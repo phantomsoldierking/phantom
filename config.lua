@@ -1,3 +1,4 @@
+--config.lua
 -- Phantom Developer Dashboard Configuration
 -- This file is where you define your layout, commands, and custom panels.
 
