@@ -36,10 +36,11 @@ const quickFacts = [
 ];
 
 const commandSteps = [
-  "go build -o phantom ./cmd/phantom",
-  "./phantom",
-  "./phantom /path/to/project",
-  "cat response.json | ./phantom explore -",
+"curl -L -o phantom.tar.gz https://github.com/phantomsoldierking/phantom/releases/download/v0.1.0/phantom_v0.1.0_linux_amd64.tar.gz",
+"tar -xzf phantom.tar.gz",
+"chmod +x phantom",
+"sudo mv phantom /usr/local/bin/phantom",
+"phantom --help",
 ];
 
 export default function Home() {
