@@ -6,6 +6,9 @@
 bin/*
 pkg/*
 !.gitkeep
+site/node_modules/
+site/.next/
+site/out/
 
 # goop - go package manager
 .vendor
