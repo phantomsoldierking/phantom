@@ -13,6 +13,7 @@ import (
 	"phantom/internal/ui/components/styles"
 	"phantom/internal/ui/tabs/dashboard"
 	"phantom/internal/ui/tabs/docker"
+	"phantom/internal/ui/tabs/explorer"
 	"phantom/internal/ui/tabs/git"
 	"phantom/internal/ui/tabs/http"
 	"phantom/internal/ui/tabs/kind"
@@ -42,6 +43,11 @@ type shellResultMsg struct {
 	Err     error
 }
 
+type StartOptions struct {
+	StartTab    string
+	ExplorerRaw string
+}
+
 // Model is the main model for the TUI application.
 type Model struct {
 	Tabs      []string
@@ -56,6 +62,7 @@ type Model struct {
 	DockerModel    launcher.Model
 	KindModel      kind.Model
 	NvimModel      launcher.Model
+	ExplorerModel  explorer.Model
 	LogsModel      logs.Model
 	ProcessesModel processes.Model
 	PortsModel     ports.Model
@@ -84,7 +91,7 @@ func InitialModel() Model {
 	palette.Prompt = ": "
 
 	m := Model{
-		Tabs:           []string{"Dashboard", "Logs", "Processes", "Ports", "HTTP", "Git", "Docker", "Kind", "Nvim"},
+		Tabs:           []string{"Dashboard", "Explorer", "Logs", "Processes", "Ports", "HTTP", "Git", "Docker", "Kind", "Nvim"},
 		ActiveTab:      0,
 		DashboardModel: dashboard.Model{},
 		HTTPModel:      http.New(),
@@ -92,10 +99,27 @@ func InitialModel() Model {
 		DockerModel:    docker.New(),
 		KindModel:      kind.New(),
 		NvimModel:      nvim.New(),
+		ExplorerModel:  explorer.New(),
 		LogsModel:      logs.New("debug.log"),
 		ProcessesModel: processes.New(),
 		PortsModel:     ports.New(),
 		PaletteInput:   palette,
+	}
+	return m
+}
+
+func InitialModelWithOptions(opts StartOptions) Model {
+	m := InitialModel()
+	if opts.StartTab != "" {
+		if idx := m.tabIndex(opts.StartTab); idx >= 0 {
+			m.ActiveTab = idx
+		}
+	}
+	if strings.TrimSpace(opts.ExplorerRaw) != "" {
+		m.ExplorerModel = m.ExplorerModel.LoadRaw(opts.ExplorerRaw)
+		if idx := m.tabIndex("Explorer"); idx >= 0 {
+			m.ActiveTab = idx
+		}
 	}
 	return m
 }
@@ -105,6 +129,7 @@ func (m Model) Init() tea.Cmd {
 	return tea.Batch(
 		m.DashboardModel.Init(),
 		m.LogsModel.Init(),
+		m.ExplorerModel.Init(),
 		m.ProcessesModel.Init(),
 		m.PortsModel.Init(),
 		m.HTTPModel.Init(),
@@ -186,6 +211,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		modelHeight := m.Height - 5
 		m.DashboardModel.Width, m.DashboardModel.Height = m.Width, modelHeight
 		m.LogsModel.Width, m.LogsModel.Height = m.Width, modelHeight
+		m.ExplorerModel.Width, m.ExplorerModel.Height = m.Width, modelHeight
 		m.ProcessesModel.Width, m.ProcessesModel.Height = m.Width, modelHeight
 		m.PortsModel.Width, m.PortsModel.Height = m.Width, modelHeight
 		m.HTTPModel.SetSize(m.Width, modelHeight)
@@ -218,6 +244,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.DashboardModel, cmd = m.DashboardModel.Update(msg)
 	case "Logs":
 		m.LogsModel, cmd = m.LogsModel.Update(msg)
+	case "Explorer":
+		m.ExplorerModel, cmd = m.ExplorerModel.Update(msg)
 	case "Processes":
 		m.ProcessesModel, cmd = m.ProcessesModel.Update(msg)
 	case "Ports":
@@ -403,6 +431,8 @@ func (m Model) View() string {
 		tabContent = m.DashboardModel.View()
 	case "Logs":
 		tabContent = m.LogsModel.View()
+	case "Explorer":
+		tabContent = m.ExplorerModel.View()
 	case "Processes":
 		tabContent = m.ProcessesModel.View()
 	case "Ports":

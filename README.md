@@ -24,6 +24,11 @@ Phantom is a keyboard-first terminal dashboard for everyday developer operations
   - environment variable substitution (`{{var}}`)
   - native Go HTTP transport (no `curl` dependency)
   - response views: pretty/raw/headers
+- `Explorer` tab (JSON/YAML/TOML)
+  - paste input, file input, or CLI preload (`phantom explore <file|->`)
+  - interactive tree expand/collapse with path + value preview
+  - search (`/`), gojq filter (`F`), format convert (`c`)
+  - yank node JSON (`y`) and JSONPath-like path (`P`)
 - Launcher tabs
   - `Git` (`lazygit`)
   - `Docker` (`lazydocker`)
@@ -50,6 +55,7 @@ phantom/
 │   │   ├── components/
 │   │   └── tabs/
 │   │       ├── dashboard/
+│   │       ├── explorer/
 │   │       ├── logs/
 │   │       ├── processes/
 │   │       ├── ports/
@@ -80,6 +86,10 @@ Missing optional binaries do not crash Phantom. Their tabs remain visible and sh
 ```bash
 go build -o phantom ./cmd/phantom
 ./phantom
+
+# open directly in Explorer tab
+./phantom explore ./response.json
+cat ./response.json | ./phantom explore -
 ```
 
 ## Test
@@ -153,6 +163,19 @@ Config = {
 - `j`/`k`: move
 - `g`/`G`: top/bottom
 - `y`: yank selected log line
+
+### Explorer
+
+- `p`: paste mode (Ctrl+S to parse)
+- `f`: file load mode
+- `e`: open current document in `$EDITOR` and reload
+- `Enter`: expand/collapse node
+- `/`: search by key/path/value
+- `F`: apply gojq filter expression
+- `P`: yank current node path
+- `y`: yank current node JSON
+- `c`: cycle conversion format (`json`/`yaml`/`toml`)
+- `R`: reset from original raw input
 
 ### Processes
 
