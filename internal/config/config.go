@@ -19,6 +19,7 @@ type ConfigLoadedMsg struct {
 	Environment map[string]string
 	LogFile     string
 	LogSources  []logs.SourceConfig
+	ConfigPath  string
 }
 
 // LoadConfig reads and parses the config.lua file.
@@ -35,19 +36,19 @@ func LoadConfig() tea.Cmd {
 
 		if err := L.DoFile(configPath); err != nil {
 			log.Printf("could not load %s: %v. Using defaults.", configPath, err)
-			return ConfigLoadedMsg{Templates: []list.Item{}, Environment: map[string]string{}, LogFile: "debug.log", LogSources: nil}
+			return ConfigLoadedMsg{Templates: []list.Item{}, Environment: map[string]string{}, LogFile: "debug.log", LogSources: nil, ConfigPath: configPath}
 		}
 
 		configTable, ok := L.GetGlobal("Config").(*lua.LTable)
 		if !ok {
 			log.Println("'Config' table not found. Using defaults.")
-			return ConfigLoadedMsg{Templates: []list.Item{}, Environment: map[string]string{}, LogFile: "debug.log", LogSources: nil}
+			return ConfigLoadedMsg{Templates: []list.Item{}, Environment: map[string]string{}, LogFile: "debug.log", LogSources: nil, ConfigPath: configPath}
 		}
 
 		httpTable, ok := configTable.RawGetString("http").(*lua.LTable)
 		if !ok {
 			log.Println("'http' table not found in Config. Using defaults.")
-			return ConfigLoadedMsg{Templates: []list.Item{}, Environment: map[string]string{}, LogFile: "debug.log", LogSources: nil}
+			return ConfigLoadedMsg{Templates: []list.Item{}, Environment: map[string]string{}, LogFile: "debug.log", LogSources: nil, ConfigPath: configPath}
 		}
 
 		// Load templates
@@ -115,7 +116,7 @@ func LoadConfig() tea.Cmd {
 			}
 		}
 
-		return ConfigLoadedMsg{Templates: templates, Environment: environment, LogFile: logFile, LogSources: logSources}
+		return ConfigLoadedMsg{Templates: templates, Environment: environment, LogFile: logFile, LogSources: logSources, ConfigPath: configPath}
 	}
 }
 

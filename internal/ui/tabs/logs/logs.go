@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/mattn/go-runewidth"
 )
 
 type SourceType string
@@ -75,6 +77,8 @@ type Model struct {
 	sourcePickerOpen  bool
 	sourcePickerIndex int
 }
+
+var ansiCSI = regexp.MustCompile(`\x1b\[[0-9;?]*[ -/]*[@-~]`)
 
 func New(filePath string) Model {
 	in := textinput.New()
@@ -248,7 +252,7 @@ func (m Model) View() string {
 	header := styles.ListHeaderStyle.Render("Logs")
 	status := styles.HelpStyle.Render(fmt.Sprintf("r:refresh f:follow(%v) l:error-only(%v) /:filter S:sources []:toggle y:yank", m.follow, m.onlyErrors))
 	if m.lastErr != "" {
-		status = styles.ErrorStyle.Render(m.lastErr)
+		status = styles.ErrorStyle.Render(truncateVisual(m.lastErr, max(24, m.Width-4)))
 	}
 	if m.filtering {
 		status = lipgloss.JoinVertical(lipgloss.Left, status, m.filter.View())
@@ -256,6 +260,7 @@ func (m Model) View() string {
 
 	rows := []string{}
 	visible := m.visibleEntries()
+	lineWidth := m.logLineWidth()
 	if len(visible) == 0 {
 		rows = append(rows, styles.HelpStyle.Render("No lines to display."))
 	} else {
@@ -270,7 +275,10 @@ func (m Model) View() string {
 				lineStyle = lineStyle.Foreground(lipgloss.Color("69"))
 			}
 			badge := sourceBadge(entry.Source, entry.Color)
-			rows = append(rows, lineStyle.Render(fmt.Sprintf("%s %s %s", prefix, badge, entry.Line)))
+			fixed := lipgloss.Width(prefix) + 1 + lipgloss.Width(badge) + 1
+			textW := max(8, lineWidth-fixed)
+			line := fmt.Sprintf("%s %s %s", prefix, badge, truncateVisual(entry.Line, textW))
+			rows = append(rows, lineStyle.Render(line))
 		}
 	}
 	body := strings.Join(rows, "\n")
@@ -349,7 +357,7 @@ func (m Model) pollCmd() tea.Cmd {
 				continue
 			}
 			for _, line := range newLines {
-				line = strings.TrimSpace(line)
+				line = sanitizeLogLine(line)
 				if line == "" {
 					continue
 				}
@@ -477,7 +485,7 @@ func splitLines(input string, maxLines int) []string {
 	raw := strings.Split(strings.ReplaceAll(input, "\r\n", "\n"), "\n")
 	out := make([]string, 0, len(raw))
 	for _, line := range raw {
-		line = strings.TrimSpace(line)
+		line = sanitizeLogLine(line)
 		if line == "" {
 			continue
 		}
@@ -539,6 +547,56 @@ func (m Model) contentHeight() int {
 		return 5
 	}
 	return h
+}
+
+func (m Model) logLineWidth() int {
+	w := m.Width - 4
+	if m.sourcePickerOpen {
+		sourcePaneW := min(40, max(28, m.Width/3))
+		w = w - sourcePaneW - 4
+	}
+	if w < 24 {
+		return 24
+	}
+	return w
+}
+
+func sanitizeLogLine(s string) string {
+	s = strings.ReplaceAll(s, "\r", " ")
+	s = ansiCSI.ReplaceAllString(s, "")
+	// Remove remaining non-printable control chars except tabs/spaces.
+	var b strings.Builder
+	for _, r := range s {
+		if r == '\t' || r >= 32 {
+			b.WriteRune(r)
+		}
+	}
+	return strings.TrimSpace(b.String())
+}
+
+func truncateVisual(s string, width int) string {
+	if width <= 0 {
+		return ""
+	}
+	s = sanitizeLogLine(s)
+	if runewidth.StringWidth(s) <= width {
+		return s
+	}
+	if width == 1 {
+		return "…"
+	}
+	var b strings.Builder
+	cur := 0
+	for _, r := range s {
+		rw := runewidth.RuneWidth(r)
+		if cur+rw > width-1 {
+			break
+		}
+		b.WriteRune(r)
+		cur += rw
+	}
+	b.WriteRune('…')
+	return b.String()
 }
 
 func tickCmd() tea.Cmd {

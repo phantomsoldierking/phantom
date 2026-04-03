@@ -46,6 +46,9 @@ type shellResultMsg struct {
 type StartOptions struct {
 	StartTab    string
 	ExplorerRaw string
+	ExplorerDir string
+	WorkDir     string
+	TargetFile  string
 }
 
 // Model is the main model for the TUI application.
@@ -82,6 +85,8 @@ type Model struct {
 
 	StatusText  string
 	StatusUntil time.Time
+	ConfigPath  string
+	WorkDir     string
 }
 
 // InitialModel creates the initial state of the application.
@@ -110,10 +115,25 @@ func InitialModel() Model {
 
 func InitialModelWithOptions(opts StartOptions) Model {
 	m := InitialModel()
+	if opts.WorkDir != "" {
+		m.WorkDir = opts.WorkDir
+		m.GitModel.WorkDir = opts.WorkDir
+		m.DockerModel.WorkDir = opts.WorkDir
+		m.NvimModel.WorkDir = opts.WorkDir
+	}
+	m.GitModel.AutoLaunch = true
+	m.DockerModel.AutoLaunch = true
+	m.NvimModel.AutoLaunch = true
+	if opts.TargetFile != "" {
+		m.NvimModel.Args = []string{opts.TargetFile}
+	}
 	if opts.StartTab != "" {
 		if idx := m.tabIndex(opts.StartTab); idx >= 0 {
 			m.ActiveTab = idx
 		}
+	}
+	if strings.TrimSpace(opts.ExplorerDir) != "" {
+		m.ExplorerModel = m.ExplorerModel.LoadRootConfigs(opts.ExplorerDir)
 	}
 	if strings.TrimSpace(opts.ExplorerRaw) != "" {
 		m.ExplorerModel = m.ExplorerModel.LoadRaw(opts.ExplorerRaw)
@@ -190,17 +210,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		case key.Matches(msg, key.NewBinding(key.WithKeys("tab"))):
 			m.ActiveTab = (m.ActiveTab + 1) % len(m.Tabs)
-			return m, nil
+			return m, m.tabEnterCmd()
 		case key.Matches(msg, key.NewBinding(key.WithKeys("shift+tab"))):
 			m.ActiveTab--
 			if m.ActiveTab < 0 {
 				m.ActiveTab = len(m.Tabs) - 1
 			}
-			return m, nil
+			return m, m.tabEnterCmd()
 		default:
 			if n, err := strconv.Atoi(msg.String()); err == nil && n >= 1 && n <= len(m.Tabs) {
 				m.ActiveTab = n - 1
-				return m, nil
+				return m, m.tabEnterCmd()
 			}
 		}
 
@@ -222,21 +242,35 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.PaletteInput.Width = max(20, m.Width-10)
 
 	case app.CheckBinaryMsg:
+		var launch tea.Cmd
 		switch msg.AppName {
 		case m.GitModel.BinaryName:
 			m.GitModel.IsInstalled = msg.Found
+			if msg.Found && m.Tabs[m.ActiveTab] == "Git" {
+				launch = m.GitModel.LaunchCmd()
+			}
 		case m.DockerModel.BinaryName:
 			m.DockerModel.IsInstalled = msg.Found
+			if msg.Found && m.Tabs[m.ActiveTab] == "Docker" {
+				launch = m.DockerModel.LaunchCmd()
+			}
 		case "kind":
 			m.KindModel.SetInstalled(msg.Found)
 		case m.NvimModel.BinaryName:
 			m.NvimModel.IsInstalled = msg.Found
+			if msg.Found && m.Tabs[m.ActiveTab] == "Nvim" {
+				launch = m.NvimModel.LaunchCmd()
+			}
+		}
+		if launch != nil {
+			return m, launch
 		}
 
 	case config.ConfigLoadedMsg:
 		m.HTTPModel.Collections.SetItems(msg.Templates)
 		m.HTTPModel.Environment = msg.Environment
 		m.LogsModel.ApplyConfig(msg.LogFile, msg.LogSources)
+		m.ConfigPath = msg.ConfigPath
 	}
 
 	switch m.Tabs[m.ActiveTab] {
@@ -347,6 +381,7 @@ func (m Model) updatePalette(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			switch selected.Kind {
 			case "tab":
 				m.ActiveTab = selected.Index
+				return m, m.tabEnterCmd()
 			case "quit":
 				return m, tea.Quit
 			case "reload_config":
@@ -450,12 +485,20 @@ func (m Model) View() string {
 	}
 
 	statusText := fmt.Sprintf("Phantom | Tab/Shift+Tab switch | 1-9 jump | : palette | q quit | %s", time.Now().Format("15:04:05"))
+	if m.ConfigPath != "" {
+		statusText = fmt.Sprintf("Phantom | Tab Shift+Tab 1-9 : q | cfg: %s | %s", m.ConfigPath, time.Now().Format("15:04:05"))
+	}
+	if m.WorkDir != "" {
+		statusText += " | wd: " + m.WorkDir
+	}
 	if m.StatusText != "" && time.Now().Before(m.StatusUntil) {
 		statusText += " | " + m.StatusText
 	}
-	statusBar := lipgloss.NewStyle().Foreground(lipgloss.Color("#FFF")).Background(lipgloss.Color("57")).Width(m.Width).Render(statusText)
+	statusBar := styles.StatusBarStyle.Width(m.Width).Render(statusText)
 
-	main := lipgloss.JoinVertical(lipgloss.Left, tabHeader, styles.DocStyle.Render(tabContent), statusBar)
+	contentHeight := max(1, m.Height-2)
+	contentArea := styles.DocStyle.Width(m.Width).Height(contentHeight).MaxHeight(contentHeight).Render(tabContent)
+	main := lipgloss.JoinVertical(lipgloss.Left, tabHeader, contentArea, statusBar)
 	if !m.PaletteOpen {
 		return main
 	}
@@ -528,6 +571,19 @@ func (m Model) overlayHeight() int {
 		return 24
 	}
 	return h
+}
+
+func (m Model) tabEnterCmd() tea.Cmd {
+	switch m.Tabs[m.ActiveTab] {
+	case "Git":
+		return m.GitModel.LaunchCmd()
+	case "Docker":
+		return m.DockerModel.LaunchCmd()
+	case "Nvim":
+		return m.NvimModel.LaunchCmd()
+	default:
+		return nil
+	}
 }
 
 func min(a, b int) int {

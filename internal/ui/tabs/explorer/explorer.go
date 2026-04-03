@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"phantom/internal/app"
 	"phantom/internal/ui/components/styles"
@@ -127,6 +128,58 @@ func (m Model) LoadRaw(raw string) Model {
 	m.expanded = map[string]bool{"$": true}
 	m.rebuildRows()
 	return m
+}
+
+// LoadRootConfigs builds and loads a root-only config index for the given folder.
+func (m Model) LoadRootConfigs(root string) Model {
+	root = strings.TrimSpace(root)
+	if root == "" {
+		return m
+	}
+	entries, err := os.ReadDir(root)
+	if err != nil {
+		m.ErrText = err.Error()
+		return m
+	}
+
+	files := make([]any, 0)
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if !isConfigLike(name) {
+			continue
+		}
+		info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+		full := filepath.Join(root, name)
+		preview := ""
+		if b, err := os.ReadFile(full); err == nil {
+			preview = strings.TrimSpace(string(b))
+			if len(preview) > 240 {
+				preview = preview[:240] + "..."
+			}
+		}
+		files = append(files, map[string]any{
+			"name":     name,
+			"path":     full,
+			"size":     info.Size(),
+			"modified": info.ModTime().Format(time.RFC3339),
+			"preview":  preview,
+		})
+	}
+
+	doc := map[string]any{
+		"root":        root,
+		"scanned_at":  time.Now().Format(time.RFC3339),
+		"file_count":  len(files),
+		"config_files": files,
+	}
+	raw, _ := json.MarshalIndent(doc, "", "  ")
+	return m.LoadRaw(string(raw))
 }
 
 func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
@@ -584,6 +637,22 @@ func parseInput(raw string) (any, string, error) {
 	}
 
 	return nil, "", errors.New("unable to parse input as JSON, YAML, or TOML")
+}
+
+func isConfigLike(name string) bool {
+	l := strings.ToLower(name)
+	if l == "config.lua" || l == "config.toml" || l == "config.yaml" || l == "config.yml" || l == ".env" {
+		return true
+	}
+	if strings.HasPrefix(l, ".env.") {
+		return true
+	}
+	switch filepath.Ext(l) {
+	case ".json", ".yaml", ".yml", ".toml", ".ini", ".conf", ".cfg", ".lua":
+		return true
+	default:
+		return false
+	}
 }
 
 func normalizeNode(v any) any {

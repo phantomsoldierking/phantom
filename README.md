@@ -90,6 +90,10 @@ go build -o phantom ./cmd/phantom
 # open directly in Explorer tab
 ./phantom explore ./response.json
 cat ./response.json | ./phantom explore -
+
+# start Phantom scoped to a project folder or file path
+./phantom /path/to/project
+./phantom /path/to/project/main.go
 ```
 
 ## Test
@@ -151,6 +155,7 @@ Config = {
 - `Tab` / `Shift+Tab`: next/previous tab
 - `1`-`9`: jump to tab index
 - `:`: command palette
+- `phantom <path>`: set working directory from folder/file path
 
 ### Logs
 
@@ -236,3 +241,5 @@ Config = {
 - Logs multi-source polling is snapshot-based; it is optimized for practical debugging workflows rather than perfect stream replay semantics.
 - HTTP headers support one header per line (`Key: Value`), with backward-compatible parsing for semicolon-separated entries.
 - Universal yank fallback order: OSC 52 -> `pbcopy`/`xclip`/`xsel` -> `/tmp/phantom_yank`.
+- `Git`, `Docker`, and `Nvim` tabs launch directly when you switch to those tabs.
+- When starting with a path (`phantom <path>`), launcher tabs run in that path's root directory and Explorer preloads root config files from that folder.

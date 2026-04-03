@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"phantom/internal/ui"
@@ -15,19 +16,34 @@ func main() {
 	// Setup logging
 	f, err := tea.LogToFile("debug.log", "debug")
 	if err != nil {
-		fmt.Println("fatal:", err)
-		os.Exit(1)
+		f, err = tea.LogToFile("/tmp/phantom-debug.log", "debug")
+		if err != nil {
+			fmt.Println("fatal:", err)
+			os.Exit(1)
+		}
 	}
 	defer f.Close()
 
-	model := ui.InitialModel()
-	if opts, handled, err := parseCLIArgs(os.Args[1:]); handled {
-		if err != nil {
+	opts, err := parseCLIArgs(os.Args[1:])
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
+		os.Exit(1)
+	}
+	if opts.WorkDir == "" {
+		if wd, err := os.Getwd(); err == nil {
+			opts.WorkDir = wd
+		}
+	}
+	if opts.ExplorerDir == "" {
+		opts.ExplorerDir = opts.WorkDir
+	}
+	if opts.WorkDir != "" {
+		if err := os.Chdir(opts.WorkDir); err != nil {
 			fmt.Fprintln(os.Stderr, "error:", err)
 			os.Exit(1)
 		}
-		model = ui.InitialModelWithOptions(opts)
 	}
+	model := ui.InitialModelWithOptions(opts)
 
 	// Create and run the Bubble Tea program
 	p := tea.NewProgram(model, tea.WithAltScreen(), tea.WithMouseCellMotion())
@@ -36,9 +52,10 @@ func main() {
 	}
 }
 
-func parseCLIArgs(args []string) (ui.StartOptions, bool, error) {
+func parseCLIArgs(args []string) (ui.StartOptions, error) {
+	opts := ui.StartOptions{}
 	if len(args) == 0 {
-		return ui.StartOptions{}, false, nil
+		return opts, nil
 	}
 
 	switch args[0] {
@@ -47,7 +64,7 @@ func parseCLIArgs(args []string) (ui.StartOptions, bool, error) {
 		os.Exit(0)
 	case "explore":
 		if len(args) < 2 {
-			return ui.StartOptions{}, true, fmt.Errorf("usage: phantom explore <file|- >")
+			return ui.StartOptions{}, fmt.Errorf("usage: phantom explore <file|->")
 		}
 		source := strings.TrimSpace(args[1])
 		var data []byte
@@ -56,18 +73,40 @@ func parseCLIArgs(args []string) (ui.StartOptions, bool, error) {
 			data, err = os.ReadFile("/dev/stdin")
 		} else {
 			data, err = os.ReadFile(source)
+			if err == nil {
+				if abs, absErr := filepath.Abs(source); absErr == nil {
+					opts.WorkDir = filepath.Dir(abs)
+					opts.ExplorerDir = opts.WorkDir
+				}
+			}
 		}
 		if err != nil {
-			return ui.StartOptions{}, true, err
+			return ui.StartOptions{}, err
 		}
-		return ui.StartOptions{
-			StartTab:    "Explorer",
-			ExplorerRaw: string(data),
-		}, true, nil
+		opts.StartTab = "Explorer"
+		opts.ExplorerRaw = string(data)
+		return opts, nil
 	default:
-		return ui.StartOptions{}, false, nil
+		target := args[0]
+		info, err := os.Stat(target)
+		if err != nil {
+			return ui.StartOptions{}, fmt.Errorf("unknown command or path not found: %s", target)
+		}
+		abs, err := filepath.Abs(target)
+		if err != nil {
+			return ui.StartOptions{}, err
+		}
+		if info.IsDir() {
+			opts.WorkDir = abs
+			opts.ExplorerDir = abs
+			return opts, nil
+		}
+		opts.TargetFile = abs
+		opts.WorkDir = filepath.Dir(abs)
+		opts.ExplorerDir = opts.WorkDir
+		return opts, nil
 	}
-	return ui.StartOptions{}, false, nil
+	return opts, nil
 }
 
 func printUsage() {

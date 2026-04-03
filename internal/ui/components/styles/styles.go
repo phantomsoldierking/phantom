@@ -4,7 +4,7 @@ import "github.com/charmbracelet/lipgloss"
 
 // General styles
 var (
-	DocStyle  = lipgloss.NewStyle().Margin(1, 2)
+	DocStyle  = lipgloss.NewStyle().Padding(0, 1)
 	HelpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 )
 
@@ -12,11 +12,11 @@ var (
 var (
 	ActiveTabStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FFFFFF")).
-			Background(lipgloss.Color("#575B7E")).
+			Background(lipgloss.Color("#3E5C76")).
 			Padding(0, 1)
 	InactiveTabStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#C2BDB6")).
-				Padding(0, 1)
+				Foreground(lipgloss.Color("#8FA3B8")).
+			Padding(0, 1)
 )
 
 // List styles
@@ -44,6 +44,10 @@ var (
 var (
 	BarStyle       = lipgloss.NewStyle().Background(lipgloss.Color("#575B7E")).Foreground(lipgloss.Color("#E5E5E5"))
 	BarHeaderStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("252"))
+	StatusBarStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#EAF2FF")).
+			Background(lipgloss.Color("#1E3A5F")).
+			Padding(0, 1)
 )
 
 // JSON Highlighting styles
