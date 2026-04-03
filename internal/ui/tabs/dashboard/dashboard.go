@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -82,14 +83,37 @@ func GetSysInfo() tea.Cmd {
 		cpuPs, _ := cpu.Percent(0, false)
 		memPs, _ := mem.VirtualMemory()
 		diskPs, _ := disk.Usage("/")
-		return SysInfoMsg{CpuPercent: cpuPs[0], MemPercent: memPs.UsedPercent, DiskPercent: diskPs.UsedPercent}
+		cpuPercent := 0.0
+		if len(cpuPs) > 0 {
+			cpuPercent = cpuPs[0]
+		}
+		memPercent := 0.0
+		if memPs != nil {
+			memPercent = memPs.UsedPercent
+		}
+		diskPercent := 0.0
+		if diskPs != nil {
+			diskPercent = diskPs.UsedPercent
+		}
+		return SysInfoMsg{CpuPercent: cpuPercent, MemPercent: memPercent, DiskPercent: diskPercent}
 	}
 }
 
 func GetProcs() tea.Cmd {
 	return func() tea.Msg {
 		ps, _ := process.Processes()
-		// Sorting processes by memory usage would be a good enhancement here
+		sort.Slice(ps, func(i, j int) bool {
+			left, _ := ps[i].MemoryInfo()
+			right, _ := ps[j].MemoryInfo()
+			var leftRSS, rightRSS uint64
+			if left != nil {
+				leftRSS = left.RSS
+			}
+			if right != nil {
+				rightRSS = right.RSS
+			}
+			return leftRSS > rightRSS
+		})
 		return ProcListMsg(ps)
 	}
 }

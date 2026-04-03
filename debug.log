@@ -268,3 +268,12 @@ debug 2025/08/08 22:43:56 could not load config.lua: config.lua:107: attempt to 
 stack traceback:
 	config.lua:107: in main chunk
 	[G]: ?. Using defaults.
+debug 2026/04/03 10:05:00 Error running program: program was killed: program experienced a panic
+debug 2026/04/03 10:05:39 Error running program: program was killed: program experienced a panic
+debug 2026/04/03 10:06:51 Error running program: program was killed: program experienced a panic
+debug 2026/04/03 10:09:08 Error running program: program was killed: program experienced a panic
+debug 2026/04/03 10:10:18 Error running program: program was killed: program experienced a panic
+debug 2026/04/03 10:10:37 Error running program: program was killed: program experienced a panic
+debug 2026/04/03 10:38:02 Error running program: program was killed: program experienced a panic
+debug 2026/04/03 10:44:45 Error running program: program was killed: program experienced a panic
+debug 2026/04/03 10:45:02 Error running program: program was killed: program experienced a panic

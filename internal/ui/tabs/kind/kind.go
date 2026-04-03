@@ -1,9 +1,6 @@
 // internal/ui/tabs/kind/kind.go
 package kind
 
-// TO-DOs
-// add delay/hook(complex??) to avoid race condition in commands
-
 import (
 	"bytes"
 	"fmt"
@@ -231,8 +228,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	if m.promptAction != "" && m.promptAction != "create-name" && m.promptAction != "create-config" {
+		keyMsg, ok := msg.(tea.KeyMsg)
+		if !ok {
+			return m, nil
+		}
 		var cmd tea.Cmd
-		keyMsg := msg.(tea.KeyMsg) // Cast msg to tea.KeyMsg
+		m.textPrompt, cmd = m.textPrompt.Update(keyMsg)
 		switch keyMsg.Type {
 		case tea.KeyEnter:
 			val := strings.TrimSpace(m.textPrompt.Value())
@@ -253,8 +254,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.promptAction = ""
 			m.textPrompt.SetValue("")
 			return m, nil
+		default:
+			return m, cmd
 		}
-		return m, cmd
 	}
 
 	switch m.state {

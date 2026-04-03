@@ -1,112 +1,215 @@
-# Phantom Developer Dashboard
+# Phantom
 
-Phantom is a TUI (Terminal User Interface) developer dashboard for managing your workspace, running system tools, sending HTTP requests, and more—all from your terminal.
+Phantom is a keyboard-first terminal dashboard for everyday developer operations: system health, logs, processes, ports, HTTP workflows, and tool launchers.
 
-## Directory Structure
+## What is implemented
 
-```
-.
-├── config.lua                # User configuration (panels, HTTP templates, commands)
-├── debug.log                 # Log file (created at runtime)
-├── go.mod, go.sum            # Go module files
-├── cmd/
-│   └── phantom/
-│       └── main.go           # Application entry point
+- `Dashboard` tab
+  - CPU, memory, disk usage
+  - top memory processes
+- `Logs` tab
+  - multi-source merged logs (`file`, `journald_unit`, `command`)
+  - source badges and per-source toggles
+  - follow mode, filter, error-only mode
+- `Processes` tab
+  - live process table (PID, CPU, RSS, name)
+  - filtering/navigation
+  - action modal: signals, env inspect, open fds, PID yank
+- `Ports` tab
+  - listening/all inet socket view
+  - PID and owning process lookup
+  - action modal: kill owner, jump to process tab, yank host:port
+- `HTTP` tab
+  - collections from `config.lua`
+  - environment variable substitution (`{{var}}`)
+  - native Go HTTP transport (no `curl` dependency)
+  - response views: pretty/raw/headers
+- Launcher tabs
+  - `Git` (`lazygit`)
+  - `Docker` (`lazydocker`)
+  - `Kind` cluster operations
+  - `Nvim` (`nvim`)
+- Global UX
+  - tab switching (`Tab`/`Shift+Tab`)
+  - direct tab jump (`1`-`9`)
+  - command palette (`:`)
+  - shell escape in palette (`:!cmd`, `:!!`)
+  - config reload from palette
+  - status toasts for cross-tab actions/yank
+
+## Project layout
+
+```text
+phantom/
+├── cmd/phantom/main.go
 ├── internal/
-│   ├── app/                  # App-level utilities (binary checks, etc.)
-│   │   └── app.go
-│   ├── config/               # Loads and parses config.lua
-│   │   └── config.go
+│   ├── app/
+│   ├── config/
 │   ├── ui/
-│   │   ├── model.go          # Main TUI model (tab management, layout)
+│   │   ├── model.go
 │   │   ├── components/
-│   │   │   ├── launcher/
-│   │   │   │   └── launcher.go   # Launcher for external tools (lazygit, lazydocker, etc.)
-│   │   │   └── styles/
-│   │   │       └── styles.go     # Lipgloss styles for UI
 │   │   └── tabs/
 │   │       ├── dashboard/
-│   │       │   └── dashboard.go  # System stats, process list
-│   │       ├── docker/
-│   │       │   └── docker.go     # Docker panel (lazydocker)
-│   │       ├── git/
-│   │       │   └── git.go        # Git panel (lazygit)
+│   │       ├── logs/
+│   │       ├── processes/
+│   │       ├── ports/
 │   │       ├── http/
-│   │       │   └── http.go       # HTTP client panel
+│   │       ├── git/
+│   │       ├── docker/
 │   │       ├── kind/
-│   │       │   └── kind.go       # Kubernetes Kind cluster management
 │   │       └── nvim/
-│   │           └── nvim.go       # Neovim launcher
 │   └── utils/
-│       └── utils.go              # Utility functions (formatting, JSON pretty print)
+├── config.lua
+└── debug.log
 ```
 
-## Features
+## Requirements
 
-- **Dashboard:** View CPU, memory, disk usage, and running processes.
-- **HTTP Client:** Send HTTP requests, manage collections, view responses.
-- **Git & Docker:** Launch [lazygit](https://github.com/jesseduffield/lazygit) and [lazydocker](https://github.com/jesseduffield/lazydocker) from the dashboard.
-- **Kind:** Manage local Kubernetes clusters with [kind](https://kind.sigs.k8s.io/).
-- **Neovim:** Launch Neovim directly from the dashboard.
-- **Custom Panels:** Add your own panels via `config.lua` (e.g., clock, Docker logs).
+- Go 1.21+
+- Optional binaries:
+  - `lazygit`
+  - `lazydocker`
+  - `kind`
+  - `kubectl` (for parts of Kind tab)
+  - `nvim`
 
-## Installation
+Missing optional binaries do not crash Phantom. Their tabs remain visible and show install guidance.
 
-### Prerequisites
+## Build and run
 
-- [Go 1.21+](https://golang.org/dl/)
-- [lazygit](https://github.com/jesseduffield/lazygit) (optional, for Git panel)
-- [lazydocker](https://github.com/jesseduffield/lazydocker) (optional, for Docker panel)
-- [kind](https://kind.sigs.k8s.io/) (optional, for Kubernetes panel)
-- [neovim](https://neovim.io/) (optional, for Nvim panel)
-- [docker](https://www.docker.com/) (optional, for Docker logs panel)
-- [Lua](https://www.lua.org/) (for custom panels in `config.lua`)
-
-### Build
-
-Clone the repository and build:
-
-```sh
-git clone <your-repo-url>
-cd phantom
+```bash
 go build -o phantom ./cmd/phantom
+./phantom
 ```
 
-### Run
+## Test
 
-Make sure you have a `config.lua` in the project root (see the provided example).
-
-```sh
-./phantom
+```bash
+go test ./...
 ```
 
 ## Configuration
 
-Edit `config.lua` to customize:
+Phantom searches config in this order:
 
-- Panel layout (dashboard, http, system, custom panels)
-- HTTP request templates and environments
-- Custom shell commands (future feature)
-- Custom panels (Lua functions)
+1. `./config.lua`
+2. `~/.config/phantom/config.lua`
 
-See comments in `config.lua` for details and examples.
+If no config is found, defaults are used.
 
-## Key Bindings
+### Minimal config example
 
-- `Tab` / `Shift+Tab`: Switch panels
-- `q` or `Ctrl+C`: Quit
-- **HTTP Panel:**
-  - `Ctrl+S`: Send request
-  - `Ctrl+L`: Switch pane
-  - `Tab`/`Shift+Tab`: Move between input fields
-  - `H`/`L` or `Left`/`Right`: Switch response view
+```lua
+Config = {
+  logs = {
+    file = "debug.log",
+  },
 
-## Images
-<img width="906" height="960" alt="250724_15h07m37s_screenshot" src="https://github.com/user-attachments/assets/4b5a0a86-b5e7-4e12-8fe3-395ba38b4813" />
-<img width="1227" height="987" alt="250724_15h09m34s_screenshot" src="https://github.com/user-attachments/assets/6ba38c17-1532-4fc2-a755-7f58f134336c" />
+  http = {
+    environment = {
+      base_url = "https://jsonplaceholder.typicode.com",
+      token = "Bearer replace-me",
+    },
 
+    templates = {
+      {
+        name = "List posts",
+        method = "GET",
+        url = "{{base_url}}/posts",
+        headers = "",
+        body = "",
+      },
+      {
+        name = "Create post",
+        method = "POST",
+        url = "{{base_url}}/posts",
+        headers = "Content-Type: application/json",
+        body = [[
+{"title":"hello","body":"from phantom","userId":1}
+]],
+      },
+    },
+  },
+}
+```
 
+## Key bindings
 
-## Logging
+### Global
 
-Logs are written to `debug.log` in the project root.
+- `q` or `Ctrl+C`: quit
+- `Tab` / `Shift+Tab`: next/previous tab
+- `1`-`9`: jump to tab index
+- `:`: command palette
+
+### Logs
+
+- `r`: refresh
+- `f`: toggle follow
+- `l`: toggle error-only
+- `S`: toggle source selector
+- `[` / `]`: cycle and toggle source on/off (when selector open)
+- `/`: filter
+- `j`/`k`: move
+- `g`/`G`: top/bottom
+- `y`: yank selected log line
+
+### Processes
+
+- `r`: refresh
+- `/`: filter by process name
+- `Enter`: open action modal
+- `e`: env view
+- `f`: file-descriptor view
+- `k`: SIGTERM (inside modal)
+- `K`: SIGKILL confirm (inside modal)
+- `s`: custom signal picker (inside modal)
+- `c`/`y`: copy PID
+- `j`/`k`: move
+- `g`/`G`: top/bottom
+
+### Ports
+
+- `r`: refresh
+- `a`: toggle listening-only vs all sockets
+- `Enter`: open action modal
+- `k`: SIGTERM owner (inside modal)
+- `K`: SIGKILL owner confirm (inside modal)
+- `p`: jump to owning process in Processes tab
+- `j`/`k`: move
+- `g`/`G`: top/bottom
+- `c`/`y`: copy host:port
+
+### HTTP
+
+- `Ctrl+S`: send request
+- `Ctrl+L`: cycle focus pane
+- `Tab` / `Shift+Tab`: cycle request fields
+- `H` / `L`: cycle response view
+- `y`: yank response body (response pane)
+
+### Palette
+
+- `:!<cmd>` then `Enter`: run shell command and show output overlay
+- `:!!`: re-run last shell command
+- `j`/`k`: scroll shell output
+- `y`: yank shell output
+- `Esc`: close overlay/palette
+
+### Kind
+
+- `n`: create cluster
+- `d`: delete selected cluster
+- `x`: delete all clusters
+- `v`: describe
+- `l`: list nodes
+- `s`: switch kube context
+- `i`: load docker image into cluster
+- `k`: export kubeconfig
+- `e`: export logs
+
+## Notes
+
+- Logs multi-source polling is snapshot-based; it is optimized for practical debugging workflows rather than perfect stream replay semantics.
+- HTTP headers support one header per line (`Key: Value`), with backward-compatible parsing for semicolon-separated entries.
+- Universal yank fallback order: OSC 52 -> `pbcopy`/`xclip`/`xsel` -> `/tmp/phantom_yank`.

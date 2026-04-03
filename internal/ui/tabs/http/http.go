@@ -1,12 +1,15 @@
 package http
 
 import (
+	"bytes"
 	"fmt"
-	"net/http"
-	"os/exec"
+	"io"
+	nethttp "net/http"
 	"regexp"
 	"strings"
+	"time"
 
+	"phantom/internal/app"
 	"phantom/internal/ui/components/styles" // Corrected import path
 	"phantom/internal/utils"                // Corrected import path
 
@@ -154,6 +157,9 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 			case "l", "right":
 				m.ResponseViewTab = (m.ResponseViewTab + 1) % 3
 				m.updateResponseView()
+			case "y":
+				_, detail := utils.Yank(m.ResponseBody)
+				return m, func() tea.Msg { return app.StatusMsg{Text: "Yanked response: " + detail} }
 			default:
 				m.Response, cmd = m.Response.Update(msg)
 				cmds = append(cmds, cmd)
@@ -401,52 +407,47 @@ func (m *Model) updateResponseView() {
 
 func (m Model) sendRequest() tea.Cmd {
 	return func() tea.Msg {
-		url := m.substituteEnv(m.URL.Value())
+		rawURL := strings.TrimSpace(m.substituteEnv(m.URL.Value()))
 		headers := m.substituteEnv(m.Headers.Value())
 		body := m.substituteEnv(m.Body.Value())
 
-		args := []string{"-i", "-s", "-S", "-L"}
-		args = append(args, "-X", m.Methods[m.SelectedMethod])
-		for _, h := range strings.Split(headers, "\n") {
-			if h != "" {
-				args = append(args, "-H", h)
-			}
+		if rawURL == "" {
+			return HTTPResponseMsg{Err: fmt.Errorf("request URL is empty")}
 		}
-		if body != "" {
-			args = append(args, "-d", body)
-		}
-		args = append(args, url)
 
-		cmd := exec.Command("curl", args...)
-		output, err := cmd.CombinedOutput()
+		req, err := nethttp.NewRequest(m.Methods[m.SelectedMethod], rawURL, bytes.NewBufferString(body))
 		if err != nil {
-			return HTTPResponseMsg{Err: fmt.Errorf("curl failed: %w\nOutput: %s", err, string(output))}
+			return HTTPResponseMsg{Err: err}
 		}
 
-		respStr := string(output)
-		parts := strings.SplitN(respStr, "\r\n\r\n", 2)
-		if len(parts) != 2 {
-			if strings.Contains(respStr, "HTTP/1.1 100 Continue") {
-				respStr = strings.SplitN(respStr, "\r\n\r\n", 2)[1]
-			}
-			lastHeaderIndex := strings.LastIndex(respStr, "HTTP/")
-			if lastHeaderIndex > 0 {
-				respStr = respStr[lastHeaderIndex:]
-			}
-			parts = strings.SplitN(respStr, "\r\n\r\n", 2)
-			if len(parts) != 2 {
-				return HTTPResponseMsg{Err: fmt.Errorf("failed to parse HTTP response: %s", respStr)}
+		parsedHeaders := parseHeadersString(headers)
+		for k, values := range parsedHeaders {
+			for _, v := range values {
+				req.Header.Add(k, v)
 			}
 		}
 
-		var statusCode int
-		fmt.Sscanf(parts[0], "HTTP/1.1 %d", &statusCode)
-		fmt.Sscanf(parts[0], "HTTP/2 %d", &statusCode)
-		if statusCode == 0 {
-			statusCode = http.StatusOK
+		client := &nethttp.Client{Timeout: 30 * time.Second}
+		resp, err := client.Do(req)
+		if err != nil {
+			return HTTPResponseMsg{Err: err}
+		}
+		defer resp.Body.Close()
+
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return HTTPResponseMsg{Err: err}
 		}
 
-		return HTTPResponseMsg{Headers: parts[0], Body: parts[1], Code: statusCode}
+		var respHeaders strings.Builder
+		respHeaders.WriteString(fmt.Sprintf("HTTP %s\n", resp.Status))
+		for k, values := range resp.Header {
+			for _, v := range values {
+				respHeaders.WriteString(fmt.Sprintf("%s: %s\n", k, v))
+			}
+		}
+
+		return HTTPResponseMsg{Headers: respHeaders.String(), Body: string(respBody), Code: resp.StatusCode}
 	}
 }
 
@@ -459,4 +460,46 @@ func (m Model) substituteEnv(input string) string {
 		}
 		return s // Return original if not found
 	})
+}
+
+func parseHeadersString(raw string) map[string][]string {
+	headers := make(map[string][]string)
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return headers
+	}
+
+	lines := strings.Split(raw, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		parts := strings.SplitN(line, ":", 2)
+		if len(parts) == 2 {
+			key := strings.TrimSpace(parts[0])
+			value := strings.TrimSpace(parts[1])
+			if key != "" && value != "" {
+				headers[key] = append(headers[key], value)
+			}
+			continue
+		}
+
+		// Backward-compatible fallback for older config that separated with semicolons.
+		semiParts := strings.Split(line, ";")
+		for _, token := range semiParts {
+			token = strings.TrimSpace(token)
+			p := strings.SplitN(token, ":", 2)
+			if len(p) == 2 {
+				key := strings.TrimSpace(p[0])
+				value := strings.TrimSpace(p[1])
+				if key != "" && value != "" {
+					headers[key] = append(headers[key], value)
+				}
+			}
+		}
+	}
+
+	return headers
 }

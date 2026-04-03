@@ -19,3 +19,14 @@ type CheckBinaryMsg struct {
 	AppName string
 	Found   bool
 }
+
+// StatusMsg is a lightweight app-level notification message.
+type StatusMsg struct {
+	Text string
+}
+
+// NavigateMsg requests root-level cross-tab navigation.
+type NavigateMsg struct {
+	Tab string
+	PID int32
+}

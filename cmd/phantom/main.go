@@ -19,12 +19,6 @@ func main() {
 	}
 	defer f.Close()
 
-	// Check for config file
-	if _, err := os.Stat("config.lua"); os.IsNotExist(err) {
-		log.Fatal("Error: config.lua not found! Please create it.")
-		return
-	}
-
 	// Create and run the Bubble Tea program
 	p := tea.NewProgram(ui.InitialModel(), tea.WithAltScreen(), tea.WithMouseCellMotion())
 	if _, err := p.Run(); err != nil {
