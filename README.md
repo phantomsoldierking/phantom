@@ -2,6 +2,34 @@
 
 Phantom is a keyboard-first terminal dashboard for everyday developer operations: system health, logs, processes, ports, HTTP workflows, and tool launchers.
 
+# Installation
+
+```bash
+curl -L -o phantom.tar.gz https://github.com/phantomsoldierking/phantom/releases/download/v0.1.0/phantom_v0.1.0_linux_amd64.tar.gz
+
+tar -xzf phantom.tar.gz
+chmod +x phantom
+sudo mv phantom /usr/local/bin/phantom
+
+phantom --help
+```
+
+## Build and run
+
+```bash
+go build -o phantom ./cmd/phantom
+./phantom
+
+# open directly in Explorer tab
+./phantom explore ./response.json
+cat ./response.json | ./phantom explore -
+
+# start Phantom scoped to a project folder or file path
+./phantom /path/to/project
+./phantom /path/to/project/main.go
+```
+
+
 ## What is implemented
 
 - `Dashboard` tab
@@ -81,20 +109,6 @@ phantom/
 
 Missing optional binaries do not crash Phantom. Their tabs remain visible and show install guidance.
 
-## Build and run
-
-```bash
-go build -o phantom ./cmd/phantom
-./phantom
-
-# open directly in Explorer tab
-./phantom explore ./response.json
-cat ./response.json | ./phantom explore -
-
-# start Phantom scoped to a project folder or file path
-./phantom /path/to/project
-./phantom /path/to/project/main.go
-```
 
 ## Test
 
