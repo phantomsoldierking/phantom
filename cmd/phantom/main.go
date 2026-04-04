@@ -1,9 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -13,6 +15,10 @@ import (
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "type" {
+		os.Exit(runMonkCLI(os.Args[2:]))
+	}
+
 	// Setup logging
 	f, err := tea.LogToFile("debug.log", "debug")
 	if err != nil {
@@ -114,6 +120,32 @@ func printUsage() {
 	fmt.Println("")
 	fmt.Println("Usage:")
 	fmt.Println("  phantom")
+	fmt.Println("  phantom type [monkcli args]")
 	fmt.Println("  phantom explore <file>")
 	fmt.Println("  cat payload.json | phantom explore -")
+}
+
+func runMonkCLI(args []string) int {
+	if _, err := exec.LookPath("monkcli"); err != nil {
+		fmt.Fprintln(os.Stderr, "error: monkcli is not installed or not in PATH")
+		fmt.Fprintln(os.Stderr, "")
+		fmt.Fprintln(os.Stderr, "Install it with:")
+		fmt.Fprintln(os.Stderr, "  npm install -g @siddhaartha_bs/monkcli")
+		return 1
+	}
+
+	cmd := exec.Command("monkcli", args...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			return exitErr.ExitCode()
+		}
+		fmt.Fprintln(os.Stderr, "error: failed to launch monkcli:", err)
+		return 1
+	}
+	return 0
 }

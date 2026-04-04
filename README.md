@@ -27,6 +27,20 @@ cat ./response.json | ./phantom explore -
 # start Phantom scoped to a project folder or file path
 ./phantom /path/to/project
 ./phantom /path/to/project/main.go
+
+# launch monkcli through Phantom
+./phantom type
+```
+
+## Monk CLI integration
+
+`phantom type` launches `monkcli` (typing test CLI) from your PATH.
+
+Install once with npm:
+
+```bash
+npm install -g @siddhaartha_bs/monkcli
+phantom type
 ```
 
 
