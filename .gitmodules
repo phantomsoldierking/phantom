@@ -1,0 +1,3 @@
+[submodule "monkcli"]
+	path = monkcli
+	url = https://github.com/siddhaarthaa/monkcli.git
